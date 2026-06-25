@@ -27,6 +27,7 @@ export default function SaleForm({ defaultCostPrice, defaultSellingPrice, produc
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
 
   function set(field: string, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -38,9 +39,14 @@ export default function SaleForm({ defaultCostPrice, defaultSellingPrice, produc
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError('')
 
     const supabase = createClient()
-    const { error } = await supabase.from('sales').insert({
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('Sessão expirada. Faça login novamente.'); setLoading(false); return }
+
+    const { error: insertError } = await supabase.from('sales').insert({
+      user_id: user.id,
       date: form.date,
       order_number: form.order_number || null,
       delivery_type: form.delivery_type,
@@ -50,7 +56,9 @@ export default function SaleForm({ defaultCostPrice, defaultSellingPrice, produc
     })
 
     setLoading(false)
-    if (!error) {
+    if (insertError) {
+      setError(insertError.message)
+    } else {
       setSuccess(true)
       setTimeout(() => setSuccess(false), 2000)
       set('order_number', '')
@@ -120,6 +128,8 @@ export default function SaleForm({ defaultCostPrice, defaultSellingPrice, produc
               </span>
             </p>
           </div>
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={loading}>
             {loading ? 'Salvando...' : success ? '✓ Salvo!' : 'Registrar venda'}
