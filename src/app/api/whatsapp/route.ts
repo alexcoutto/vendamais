@@ -51,9 +51,6 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!profile) {
-    await sendWpp(phone,
-      `👋 Olá! Para usar o VendaMais pelo WhatsApp, acesse as configurações do app e cadastre seu número.\n\n🔗 ${process.env.NEXT_PUBLIC_APP_URL}/configuracoes`
-    )
     return NextResponse.json({ ok: true })
   }
 
