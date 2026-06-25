@@ -15,6 +15,7 @@ interface Profile {
   partner_split: number
   monthly_goal: number
   full_name: string | null
+  phone: string | null
 }
 
 export default function SettingsForm({ profile }: { profile: Profile | null }) {
@@ -26,6 +27,7 @@ export default function SettingsForm({ profile }: { profile: Profile | null }) {
     selling_price: String(profile?.selling_price ?? ''),
     partner_split: String(profile?.partner_split ?? 50),
     monthly_goal: String(profile?.monthly_goal ?? 39000),
+    phone: profile?.phone ?? '',
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -45,6 +47,7 @@ export default function SettingsForm({ profile }: { profile: Profile | null }) {
       selling_price: Number(form.selling_price),
       partner_split: Number(form.partner_split),
       monthly_goal: Number(form.monthly_goal),
+      phone: form.phone.replace(/\D/g, '') || null,
     }).eq('user_id', (await supabase.auth.getUser()).data.user!.id)
 
     setLoading(false)
@@ -85,6 +88,17 @@ export default function SettingsForm({ profile }: { profile: Profile | null }) {
             <Label>Meta mensal de lucro líquido (R$)</Label>
             <Input type="number" step="0.01" value={form.monthly_goal} onChange={e => set('monthly_goal', e.target.value)} placeholder="39000" className="mt-1" />
           </div>
+          <div>
+            <Label>WhatsApp (com DDD e código do país)</Label>
+            <Input
+              value={form.phone}
+              onChange={e => set('phone', e.target.value)}
+              placeholder="5511999999999"
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-400 mt-1">Cadastre para registrar vendas direto pelo WhatsApp</p>
+          </div>
+
           <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={loading}>
             {loading ? 'Salvando...' : success ? '✓ Salvo!' : 'Salvar configurações'}
           </Button>
