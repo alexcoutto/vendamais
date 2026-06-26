@@ -31,6 +31,7 @@ export default function SettingsForm({ profile }: { profile: Profile | null }) {
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   function set(field: string, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -39,8 +40,12 @@ export default function SettingsForm({ profile }: { profile: Profile | null }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setSaveError('')
     const supabase = createClient()
-    await supabase.from('profiles').update({
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaveError('Sessão expirada. Faça login novamente.'); setLoading(false); return }
+
+    const { error } = await supabase.from('profiles').update({
       full_name: form.full_name,
       product_name: form.product_name,
       cost_price: Number(form.cost_price),
@@ -48,12 +53,16 @@ export default function SettingsForm({ profile }: { profile: Profile | null }) {
       partner_split: Number(form.partner_split),
       monthly_goal: Number(form.monthly_goal),
       phone: form.phone.replace(/\D/g, '') || null,
-    }).eq('user_id', (await supabase.auth.getUser()).data.user!.id)
+    }).eq('user_id', user.id)
 
     setLoading(false)
-    setSuccess(true)
-    setTimeout(() => setSuccess(false), 2000)
-    router.refresh()
+    if (error) {
+      setSaveError(error.message)
+    } else {
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 2000)
+      router.refresh()
+    }
   }
 
   return (
@@ -98,6 +107,8 @@ export default function SettingsForm({ profile }: { profile: Profile | null }) {
             />
             <p className="text-xs text-gray-400 mt-1">Cadastre para registrar vendas direto pelo WhatsApp</p>
           </div>
+
+          {saveError && <p className="text-red-500 text-sm">{saveError}</p>}
 
           <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={loading}>
             {loading ? 'Salvando...' : success ? '✓ Salvo!' : 'Salvar configurações'}
