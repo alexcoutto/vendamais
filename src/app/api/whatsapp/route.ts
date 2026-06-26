@@ -34,12 +34,16 @@ async function sendWpp(phone: string, message: string) {
 export async function POST(req: NextRequest) {
   const body = await req.json()
 
-  // Só processa mensagens de texto recebidas (não grupos, não status)
-  if (body.type !== 'ReceivedCallback') return NextResponse.json({ ok: true })
+  // Só processa mensagens de texto (não grupos)
   if (body.isGroupMsg) return NextResponse.json({ ok: true })
   if (!body.text?.message) return NextResponse.json({ ok: true })
 
-  const phone = normalizePhone(String(body.phone))
+  // Mensagem enviada pelo dono (fromMe) ou recebida de usuário cadastrado
+  const isFromMe = body.fromMe === true || body.type === 'SentCallback'
+  const phone = isFromMe
+    ? process.env.ZAPI_OWNER_PHONE!          // dono mandou → usa o número fixo
+    : normalizePhone(String(body.phone))      // outro usuário → usa o remetente
+
   const text = String(body.text.message).trim()
   const supabase = adminClient()
 
