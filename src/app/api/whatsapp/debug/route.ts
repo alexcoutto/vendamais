@@ -15,11 +15,17 @@ export async function GET() {
     .eq('phone', ownerPhone ?? '')
     .single()
 
+  // Busca todos os perfis para diagnóstico
+  const { data: allProfiles } = await supabase
+    .from('profiles')
+    .select('user_id, product_name, phone')
+    .limit(5)
+
   return NextResponse.json({
     zapi_owner_phone_env: ownerPhone ?? 'NÃO CONFIGURADO',
     profile_found: !!profile,
     profile_phone: profile?.phone ?? null,
-    profile_product: profile?.product_name ?? null,
     supabase_error: error?.message ?? null,
+    all_profiles: allProfiles ?? [],
   })
 }
